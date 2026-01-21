@@ -51,6 +51,7 @@
 
     <div id="ui">
         ⏱️ <span id="time">0.00</span>s<br>
+        👾 Enemies: <span id="enemies">0</span><br>
         🏆 Best: <span id="best">0.00</span>s
     </div>
 
@@ -116,6 +117,141 @@
             });
         }
 
+        /* ================= DRAWING ================= */
+        function drawPlayer(p, mouse) {
+            // Body with gradient
+            const grad = ctx.createRadialGradient(p.x - 2, p.y - 2, 0, p.x, p.y, p.r);
+            grad.addColorStop(0, "#fff");
+            grad.addColorStop(1, "#a8d8ea");
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Eyes looking toward mouse
+            const eyeOffset = 3;
+            const eyeRadius = 2.5;
+            const pupilRadius = 1.2;
+            const angle = Math.atan2(mouse.y - p.y, mouse.x - p.x);
+            const lookDist = 1;
+
+            for (let side of [-1, 1]) {
+                const eyeX = p.x + side * eyeOffset;
+                const eyeY = p.y - 1;
+
+                // Eye white
+                ctx.fillStyle = "#fff";
+                ctx.beginPath();
+                ctx.arc(eyeX, eyeY, eyeRadius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = "#333";
+                ctx.lineWidth = 0.5;
+                ctx.stroke();
+
+                // Pupil
+                ctx.fillStyle = "#222";
+                ctx.beginPath();
+                ctx.arc(
+                    eyeX + Math.cos(angle) * lookDist,
+                    eyeY + Math.sin(angle) * lookDist,
+                    pupilRadius, 0, Math.PI * 2
+                );
+                ctx.fill();
+            }
+
+            // Cute blush
+            ctx.fillStyle = "rgba(255, 150, 150, 0.4)";
+            ctx.beginPath();
+            ctx.ellipse(p.x - 5, p.y + 3, 2, 1.2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(p.x + 5, p.y + 3, 2, 1.2, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawEnemy(e, player) {
+            const angle = Math.atan2(player.y - e.y, player.x - e.x);
+
+            // Body color by type
+            let baseColor, darkColor;
+            if (e.type === "dasher") {
+                baseColor = "#ff8c00";
+                darkColor = "#cc5500";
+            } else if (e.type === "splitter") {
+                baseColor = "#8b0000";
+                darkColor = "#4a0000";
+            } else {
+                baseColor = "#e63946";
+                darkColor = "#9d0208";
+            }
+
+            // Speed lines for dashers
+            if (e.type === "dasher" && e.speed > e.baseSpeed * 2) {
+                ctx.strokeStyle = "rgba(255, 140, 0, 0.5)";
+                ctx.lineWidth = 2;
+                for (let i = 1; i <= 3; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(e.x - Math.cos(angle) * (e.r + i * 5), e.y - Math.sin(angle) * (e.r + i * 5));
+                    ctx.lineTo(e.x - Math.cos(angle) * (e.r + i * 5 + 6), e.y - Math.sin(angle) * (e.r + i * 5 + 6));
+                    ctx.stroke();
+                }
+            }
+
+            // Body
+            const grad = ctx.createRadialGradient(e.x - 2, e.y - 2, 0, e.x, e.y, e.r);
+            grad.addColorStop(0, baseColor);
+            grad.addColorStop(1, darkColor);
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Crack lines for splitters
+            if (e.type === "splitter") {
+                ctx.strokeStyle = "#220000";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(e.x - 2, e.y - e.r * 0.5);
+                ctx.lineTo(e.x, e.y);
+                ctx.lineTo(e.x + 3, e.y + e.r * 0.6);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(e.x + 1, e.y - e.r * 0.3);
+                ctx.lineTo(e.x + 4, e.y + 2);
+                ctx.stroke();
+            }
+
+            // Angry eyes
+            const eyeOffset = e.r * 0.35;
+            ctx.save();
+            ctx.translate(e.x, e.y);
+            ctx.rotate(angle);
+
+            for (let side of [-1, 1]) {
+                // Eye
+                ctx.fillStyle = "#fff";
+                ctx.beginPath();
+                ctx.arc(e.r * 0.3, side * eyeOffset, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Pupil
+                ctx.fillStyle = "#000";
+                ctx.beginPath();
+                ctx.arc(e.r * 0.4, side * eyeOffset, 1.2, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Angry eyebrow
+                ctx.strokeStyle = darkColor;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(e.r * 0.1, side * (eyeOffset - 3 * side));
+                ctx.lineTo(e.r * 0.5, side * (eyeOffset - 1.5 * side));
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
         /* ================= GAME LOOP ================= */
         function restart() {
             enemies = [];
@@ -134,6 +270,7 @@
 
             const time = (now - startTime) / 1000;
             document.getElementById("time").textContent = time.toFixed(2);
+            document.getElementById("enemies").textContent = enemies.length;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -152,10 +289,7 @@
             }
 
             /* Draw player */
-            ctx.fillStyle = "white";
-            ctx.beginPath();
-            ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
-            ctx.fill();
+            drawPlayer(player, mouse);
 
             /* Enemies */
             for (let i = enemies.length - 1; i >= 0; i--) {
@@ -179,14 +313,7 @@
                 e.y += dy / d * e.speed;
 
                 /* Draw enemy */
-                ctx.fillStyle =
-                    e.type === "dasher" ? "orange" :
-                        e.type === "splitter" ? "#8b0000" :
-                            "red";
-
-                ctx.beginPath();
-                ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
-                ctx.fill();
+                drawEnemy(e, player);
 
                 /* Collision */
                 if (d < player.r + e.r) {
