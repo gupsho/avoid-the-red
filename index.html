@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <title>Avoid the Red</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
     <meta name="description"
@@ -12,11 +13,12 @@
     <!-- Open Graph (for social sharing) -->
     <meta property="og:title" content="Avoid the Red">
     <meta property="og:description" content="How long can you survive? Dodge dangerously to boost your combo.">
-    <meta property="og:image" content="preview.png">
+    <meta property="og:image" content="share.png">
     <meta property="og:type" content="website">
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="share.png">
 
     <style>
         html,
@@ -45,9 +47,226 @@
             align-items: center;
             justify-content: center;
             flex-direction: column;
-            background: rgba(0, 0, 0, 0.85);
+            background: linear-gradient(135deg, rgba(20, 0, 0, 0.95), rgba(0, 0, 0, 0.98));
             font-size: 20px;
             z-index: 3;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .death-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 24px 32px;
+            text-align: center;
+            animation: slideUp 0.5s ease-out;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            max-width: 300px;
+        }
+
+        .death-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .death-subtitle {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 24px;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 16px 12px;
+        }
+
+        .stat-box.highlight {
+            grid-column: span 2;
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.2), rgba(238, 90, 36, 0.2));
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+
+        .stat-icon {
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .stat-box.highlight .stat-value {
+            font-size: 32px;
+            background: linear-gradient(135deg, #ff6b6b, #feca57);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .new-best {
+            display: inline-block;
+            background: linear-gradient(135deg, #f9ca24, #f0932b);
+            color: #000;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(238, 90, 36, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .share-row {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-top: 16px;
+        }
+
+        .share-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .share-btn.twitter {
+            background: #1da1f2;
+            color: white;
+        }
+
+        .share-btn.copy {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+
+        .share-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .copied-toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #4ade80;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 100;
+        }
+
+        .copied-toast.show {
+            opacity: 1;
+        }
+
+        .share-banner {
+            width: 100%;
+            max-width: 220px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
         }
 
         button {
@@ -92,9 +311,42 @@
 
 
     <div id="death">
-        <div id="final"></div>
-        <button onclick="restart()">Restart</button>
+        <div class="death-card">
+            <img src="share.png" alt="Avoid the Red" class="share-banner">
+            <div id="newBestBadge" class="new-best" style="display: none;">🏆 NEW BEST!</div>
+            <div class="death-title">Game Over</div>
+            <div class="death-subtitle">You faced the red...</div>
+
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div class="stat-icon">⏱️</div>
+                    <div class="stat-value" id="finalTime">0.00</div>
+                    <div class="stat-label">Seconds</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-icon">🔥</div>
+                    <div class="stat-value" id="finalCombo">1.00×</div>
+                    <div class="stat-label">Combo</div>
+                </div>
+                <div class="stat-box highlight">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-value" id="finalScore">0.00</div>
+                    <div class="stat-label">Final Score</div>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="restart()">Play Again</button>
+            </div>
+
+            <div class="share-row">
+                <button class="share-btn twitter" onclick="shareTwitter()" title="Share on Twitter">𝕏</button>
+                <button class="share-btn copy" onclick="copyScore()" title="Copy Score">📋</button>
+            </div>
+        </div>
     </div>
+
+    <div id="copiedToast" class="copied-toast">✓ Copied to clipboard!</div>
 
     <script>
         /* ================= SETUP ================= */
@@ -572,21 +824,42 @@
 
             const finalScore = time * combo;
 
-            document.getElementById("final").innerHTML = `
-                <strong>You Died</strong><br><br>
-                ⏱ ${time.toFixed(2)}s<br>
-                🔥 Combo ${combo.toFixed(2)}×<br>
-                ⭐ Score ${(time * combo).toFixed(2)}<br><br>
-                <small>Try beating your best</small>
-                `;
+            // Store for sharing
+            window.lastGameStats = { time, combo, score: finalScore };
 
+            // Populate stat boxes
+            document.getElementById("finalTime").textContent = time.toFixed(2);
+            document.getElementById("finalCombo").textContent = combo.toFixed(2) + "×";
+            document.getElementById("finalScore").textContent = finalScore.toFixed(2);
 
+            // Show new best badge
+            const isNewBest = finalScore > bestScore;
+            document.getElementById("newBestBadge").style.display = isNewBest ? "inline-block" : "none";
 
-            if (finalScore > bestScore) {
+            if (isNewBest) {
                 bestScore = finalScore;
                 localStorage.setItem("best", bestScore);
                 document.getElementById("best").textContent = bestScore.toFixed(2);
             }
+        }
+
+        /* ================= SHARING ================= */
+        function getShareText() {
+            const s = window.lastGameStats;
+            return `🔴 Avoid the Red\n\n⏱️ ${s.time.toFixed(2)}s\n🔥 ${s.combo.toFixed(2)}× combo\n⭐ ${s.score.toFixed(2)} score\n\nCan you beat me? 🎮`;
+        }
+
+        function shareTwitter() {
+            const text = encodeURIComponent(getShareText());
+            window.open(`https://twitter.com/intent/tweet?text=${text}`, "_blank");
+        }
+
+        function copyScore() {
+            navigator.clipboard.writeText(getShareText()).then(() => {
+                const toast = document.getElementById("copiedToast");
+                toast.classList.add("show");
+                setTimeout(() => toast.classList.remove("show"), 2000);
+            });
         }
     </script>
 
