@@ -52,8 +52,10 @@
     <div id="ui">
         ⏱️ <span id="time">0.00</span>s<br>
         👾 Enemies: <span id="enemies">0</span><br>
+        🔥 Combo: <span id="combo">1.00×</span><br>
         🏆 Best: <span id="best">0.00</span>s
     </div>
+
 
     <div id="death">
         <div id="final"></div>
@@ -73,9 +75,23 @@
         window.addEventListener("resize", resize);
 
         /* ================= STATE ================= */
+        let combo = 1;
+        let risk = 0;
+
+        const MAX_COMBO = 5;
+        const NEAR_RADIUS_MULT = 3; // how close is “danger”
+
         let player, enemies, startTime, running;
         let bestScore = Number(localStorage.getItem("best")) || 0;
         document.getElementById("best").textContent = bestScore.toFixed(2);
+
+        let timeScale = 1;
+        let slowMoTimer = 0;
+
+        const SLOW_MO_SCALE = 0.35;
+        const SLOW_MO_DURATION = 120; // ms
+        let slowMoCooldown = 0;
+
 
         /* ================= PLAYER ================= */
         player = {
@@ -284,8 +300,8 @@
             let dy = mouse.y - player.y;
             let dist = Math.hypot(dx, dy);
             if (dist > player.speed) {
-                player.x += dx / dist * player.speed;
-                player.y += dy / dist * player.speed;
+                player.x += dx / dist * player.speed * timeScale;
+                player.y += dy / dist * player.speed * timeScale;
             }
 
             /* Draw player */
@@ -309,17 +325,58 @@
                     }
                 }
 
-                e.x += dx / d * e.speed;
-                e.y += dy / d * e.speed;
+                e.x += dx / d * e.speed * timeScale;
+                e.y += dy / d * e.speed * timeScale;
 
                 /* Draw enemy */
                 drawEnemy(e, player);
 
                 /* Collision */
-                if (d < player.r + e.r) {
+                const collisionDist = player.r + e.r;
+                const nearDist = collisionDist * NEAR_RADIUS_MULT;
+
+                /* Near miss */
+                if (d < nearDist && d > collisionDist) {
+                    risk = Math.min(risk + 0.015, 1);
+
+                    // Trigger slow-mo
+                    if (slowMoCooldown <= 0 && slowMoTimer <= 0) {
+                        timeScale = SLOW_MO_SCALE;
+                        slowMoTimer = SLOW_MO_DURATION;
+                        slowMoCooldown = 400; // ms before next slow-mo
+                    }
+                }
+
+
+                /* Collision */
+                if (d < collisionDist) {
                     endGame(time);
                     return;
                 }
+
+            }
+            // Risk decay
+            risk = Math.max(0, risk - 0.01);
+
+            // Combo logic
+            if (risk > 0.3) {
+                combo = Math.min(MAX_COMBO, combo + 0.01);
+            } else {
+                combo = Math.max(1, combo - 0.02);
+            }
+
+            document.getElementById("combo").textContent = combo.toFixed(2) + "×";
+
+            // Slow-mo timing
+            if (slowMoTimer > 0) {
+                slowMoTimer -= 16; // approx per frame
+                if (slowMoTimer <= 0) {
+                    timeScale = 1;
+                }
+            }
+
+            if (slowMoCooldown > 0) {
+                slowMoCooldown -= 16;
             }
 
             requestAnimationFrame(loop);
@@ -347,11 +404,17 @@
             });
 
             document.getElementById("death").style.display = "flex";
-            document.getElementById("final").textContent =
-                `You survived ${time.toFixed(2)}s`;
 
-            if (time > bestScore) {
-                bestScore = time;
+            const finalScore = time * combo;
+
+            document.getElementById("final").textContent =
+                `Time: ${time.toFixed(2)}s
+                Combo: ${combo.toFixed(2)}×
+                Score: ${finalScore.toFixed(2)}`;
+
+
+            if (finalScore > bestScore) {
+                bestScore = finalScore;
                 localStorage.setItem("best", bestScore);
                 document.getElementById("best").textContent = bestScore.toFixed(2);
             }
