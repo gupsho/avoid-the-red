@@ -21,6 +21,7 @@
             left: 12px;
             font-size: 14px;
             opacity: 0.9;
+            z-index: 2;
         }
 
         #death {
@@ -32,6 +33,7 @@
             flex-direction: column;
             background: rgba(0, 0, 0, 0.85);
             font-size: 20px;
+            z-index: 3;
         }
 
         button {
@@ -58,39 +60,38 @@
     </div>
 
     <script>
-        /* ---------------- SETUP ---------------- */
+        /* ================= SETUP ================= */
         const canvas = document.getElementById("game");
         const ctx = canvas.getContext("2d");
-        resize();
 
-        window.addEventListener("resize", resize);
         function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
         }
+        resize();
+        window.addEventListener("resize", resize);
 
-        /* ---------------- GAME STATE ---------------- */
+        /* ================= STATE ================= */
         let player, enemies, startTime, running;
         let bestScore = Number(localStorage.getItem("best")) || 0;
-
         document.getElementById("best").textContent = bestScore.toFixed(2);
 
-        /* ---------------- PLAYER ---------------- */
+        /* ================= PLAYER ================= */
         player = {
             x: canvas.width / 2,
             y: canvas.height / 2,
             r: 8,
-            speed: 5,
+            speed: 5
         };
 
-        /* ---------------- INPUT ---------------- */
+        /* ================= INPUT ================= */
         let mouse = { x: player.x, y: player.y };
         window.addEventListener("mousemove", e => {
             mouse.x = e.clientX;
             mouse.y = e.clientY;
         });
 
-        /* ---------------- ENEMY ---------------- */
+        /* ================= ENEMIES ================= */
         function spawnEnemy(time) {
             const edge = Math.floor(Math.random() * 4);
             let x, y;
@@ -103,18 +104,19 @@
             if (time > 30 && Math.random() < 0.3) type = "splitter";
             else if (time > 15 && Math.random() < 0.4) type = "dasher";
 
+            const baseSpeed = 1.5 + time * 0.02;
+
             enemies.push({
                 x, y,
                 r: type === "splitter" ? 12 : 10,
-                baseSpeed: 1.5 + time * 0.02,
-                speed: 1.5 + time * 0.02,
                 type,
+                baseSpeed,
+                speed: baseSpeed,
                 dashCooldown: Math.random() * 120
             });
         }
 
-
-        /* ---------------- GAME LOOP ---------------- */
+        /* ================= GAME LOOP ================= */
         function restart() {
             enemies = [];
             startTime = performance.now();
@@ -135,12 +137,12 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            /* Spawn enemies */
+            /* Spawn logic */
             if (Math.random() < Math.min(0.02 + time * 0.0005, 0.08)) {
                 spawnEnemy(time);
             }
 
-            /* Move player (mouse-follow with cap) */
+            /* Player movement */
             let dx = mouse.x - player.x;
             let dy = mouse.y - player.y;
             let dist = Math.hypot(dx, dy);
@@ -156,13 +158,31 @@
             ctx.fill();
 
             /* Enemies */
-            ctx.fillStyle = "red";
-            for (let e of enemies) {
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
                 let dx = player.x - e.x;
                 let dy = player.y - e.y;
                 let d = Math.hypot(dx, dy);
+
+                /* Dasher behavior */
+                if (e.type === "dasher") {
+                    e.dashCooldown--;
+                    if (e.dashCooldown <= 0) {
+                        e.speed = e.baseSpeed * 4;
+                        e.dashCooldown = 120;
+                    } else {
+                        e.speed = Math.max(e.baseSpeed, e.speed * 0.94);
+                    }
+                }
+
                 e.x += dx / d * e.speed;
                 e.y += dy / d * e.speed;
+
+                /* Draw enemy */
+                ctx.fillStyle =
+                    e.type === "dasher" ? "orange" :
+                        e.type === "splitter" ? "#8b0000" :
+                            "red";
 
                 ctx.beginPath();
                 ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
@@ -177,12 +197,28 @@
 
             requestAnimationFrame(loop);
         }
-
         requestAnimationFrame(loop);
 
-        /* ---------------- GAME OVER ---------------- */
+        /* ================= GAME OVER ================= */
         function endGame(time) {
             running = false;
+
+            /* Splitter explosion */
+            enemies.forEach(e => {
+                if (e.type === "splitter") {
+                    for (let i = 0; i < 2; i++) {
+                        enemies.push({
+                            x: e.x,
+                            y: e.y,
+                            r: 6,
+                            type: "chaser",
+                            baseSpeed: e.baseSpeed * 1.2,
+                            speed: e.baseSpeed * 1.2
+                        });
+                    }
+                }
+            });
+
             document.getElementById("death").style.display = "flex";
             document.getElementById("final").textContent =
                 `You survived ${time.toFixed(2)}s`;
@@ -194,6 +230,7 @@
             }
         }
     </script>
+
 </body>
 
 </html>
