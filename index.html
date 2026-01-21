@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Avoid the Red</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            background: #111;
+            overflow: hidden;
+            font-family: system-ui, sans-serif;
+            color: white;
+        }
+
+        #ui {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        #death {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            background: rgba(0, 0, 0, 0.85);
+            font-size: 20px;
+        }
+
+        button {
+            margin-top: 12px;
+            padding: 10px 16px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="game"></canvas>
+
+    <div id="ui">
+        ⏱️ <span id="time">0.00</span>s<br>
+        🏆 Best: <span id="best">0.00</span>s
+    </div>
+
+    <div id="death">
+        <div id="final"></div>
+        <button onclick="restart()">Restart</button>
+    </div>
+
+    <script>
+        /* ---------------- SETUP ---------------- */
+        const canvas = document.getElementById("game");
+        const ctx = canvas.getContext("2d");
+        resize();
+
+        window.addEventListener("resize", resize);
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        /* ---------------- GAME STATE ---------------- */
+        let player, enemies, startTime, running;
+        let bestScore = Number(localStorage.getItem("best")) || 0;
+
+        document.getElementById("best").textContent = bestScore.toFixed(2);
+
+        /* ---------------- PLAYER ---------------- */
+        player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            r: 8,
+            speed: 5,
+        };
+
+        /* ---------------- INPUT ---------------- */
+        let mouse = { x: player.x, y: player.y };
+        window.addEventListener("mousemove", e => {
+            mouse.x = e.clientX;
+            mouse.y = e.clientY;
+        });
+
+        /* ---------------- ENEMY ---------------- */
+        function spawnEnemy(time) {
+            const edge = Math.floor(Math.random() * 4);
+            let x, y;
+            if (edge === 0) { x = Math.random() * canvas.width; y = -20; }
+            if (edge === 1) { x = canvas.width + 20; y = Math.random() * canvas.height; }
+            if (edge === 2) { x = Math.random() * canvas.width; y = canvas.height + 20; }
+            if (edge === 3) { x = -20; y = Math.random() * canvas.height; }
+
+            let type = "chaser";
+            if (time > 30 && Math.random() < 0.3) type = "splitter";
+            else if (time > 15 && Math.random() < 0.4) type = "dasher";
+
+            enemies.push({
+                x, y,
+                r: type === "splitter" ? 12 : 10,
+                baseSpeed: 1.5 + time * 0.02,
+                speed: 1.5 + time * 0.02,
+                type,
+                dashCooldown: Math.random() * 120
+            });
+        }
+
+
+        /* ---------------- GAME LOOP ---------------- */
+        function restart() {
+            enemies = [];
+            startTime = performance.now();
+            running = true;
+            player.x = canvas.width / 2;
+            player.y = canvas.height / 2;
+            document.getElementById("death").style.display = "none";
+            requestAnimationFrame(loop);
+        }
+
+        restart();
+
+        function loop(now) {
+            if (!running) return;
+
+            const time = (now - startTime) / 1000;
+            document.getElementById("time").textContent = time.toFixed(2);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            /* Spawn enemies */
+            if (Math.random() < Math.min(0.02 + time * 0.0005, 0.08)) {
+                spawnEnemy(time);
+            }
+
+            /* Move player (mouse-follow with cap) */
+            let dx = mouse.x - player.x;
+            let dy = mouse.y - player.y;
+            let dist = Math.hypot(dx, dy);
+            if (dist > player.speed) {
+                player.x += dx / dist * player.speed;
+                player.y += dy / dist * player.speed;
+            }
+
+            /* Draw player */
+            ctx.fillStyle = "white";
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.r, 0, Math.PI * 2);
+            ctx.fill();
+
+            /* Enemies */
+            ctx.fillStyle = "red";
+            for (let e of enemies) {
+                let dx = player.x - e.x;
+                let dy = player.y - e.y;
+                let d = Math.hypot(dx, dy);
+                e.x += dx / d * e.speed;
+                e.y += dy / d * e.speed;
+
+                ctx.beginPath();
+                ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+                ctx.fill();
+
+                /* Collision */
+                if (d < player.r + e.r) {
+                    endGame(time);
+                    return;
+                }
+            }
+
+            requestAnimationFrame(loop);
+        }
+
+        requestAnimationFrame(loop);
+
+        /* ---------------- GAME OVER ---------------- */
+        function endGame(time) {
+            running = false;
+            document.getElementById("death").style.display = "flex";
+            document.getElementById("final").textContent =
+                `You survived ${time.toFixed(2)}s`;
+
+            if (time > bestScore) {
+                bestScore = time;
+                localStorage.setItem("best", bestScore);
+                document.getElementById("best").textContent = bestScore.toFixed(2);
+            }
+        }
+    </script>
+</body>
+
+</html>
