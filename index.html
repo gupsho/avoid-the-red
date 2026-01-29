@@ -487,6 +487,7 @@
             mouse.y = e.clientY;
         });
         function handleTouch(e) {
+            if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
             e.preventDefault();
             const t = e.touches[0];
             mouse.x = t.clientX;
